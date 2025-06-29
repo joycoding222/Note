@@ -1360,9 +1360,9 @@ class Derived: public Base1, public Base2
 
   当实例化一个派生类的对象：
 
-  - 首先调用基类的构造函数（按照继承顺序）
+  - 首先调用基类的构造函数（按照继承顺序），基类构造函数初始化继承的成员
   - 调用成员对象的构造函数（按照声明顺序）
-  - 调用派生类自身的构造函数
+  - 调用派生类自身的构造函数，派生类构造函数初始化派生类额外的成员
 
 - 析构函数：
 
@@ -1472,11 +1472,252 @@ public:
    - 派生类对象自身
 2. 析构顺序：与构造完全相反
 3. 注意：
-   - 多态基类的析构函数应该为虚函数
+   - **多态基类的析构函数应该为虚函数**
 
 
 
 公有继承代表了`is-a`关系，即每一个派生类对象是一个基类对象。
+
+
+
+**派生类的拷贝构造：**
+
+派生类拷贝构造函数只能访问派生类本身的成员，因此必须调用基类拷贝构造函数处理基类成员
+
+```cpp
+Child::Child(int i, const char* n, const char* s, int a)
+: Parent(i, n)  // 派生类拷贝构造函数仅能够访问派生类成员，因此必须调用基类拷贝构造函数处理基类成员
+{
+    cout << "Default Constructor Child()" << endl;
+    style_ = new char[strlen(s) + 1];
+    strncpy(style_, s, strlen(s) + 1);
+    age_ = a;
+}
+
+Child::Child(const Child& c)
+: Parent(c)
+{
+    cout << "Copy Constructor Child(const Child& c)" << endl;
+    // copy parent data:在参数列表中调用基类的copy constructor
+
+    // copy child added data
+    age_ = c.age_;
+    style_ = new char[strlen(c.style_) + 1];
+    strncpy(style_, c.style_, strlen(c.style_) + 1);
+}
+```
+
+
+
+
+
+**派生类的拷贝赋值运算符：**
+
+派生类的拷贝赋值必须同时也要处理基类的拷贝赋值操作
+
+```cpp
+Child &Child::operator=(const Child &rhs)
+{
+    if (&rhs == this)
+        return *this;
+    
+    // 调用Parent类的operator=
+    Parent::operator=(rhs); // 派生类的拷贝赋值必须要处理基类对象的拷贝赋值
+
+    // 释放左侧资源
+    delete[] style_;
+
+    // 从右侧拷贝资源
+    this->age_ = rhs.age_;
+    style_ = new char[strlen(rhs.style_) + 1];
+    strncpy(style_, rhs.style_, strlen(rhs.style_) + 1);
+
+    // 返回
+    return *this;
+}
+```
+
+
+
+**派生类中动态内存申请的实例：**
+
+```cpp
+/**
+ * 派生类中的动态内存申请
+ */
+#include <iostream>
+#include <cstring>
+
+using namespace std;
+
+class Parent
+{
+private:
+    int id_;
+    char* name_;
+
+public:
+    // constructor
+    Parent(int i = 0, const char* n = "null");
+
+    // copy constructor
+    Parent(const Parent& p);
+
+    // assignment operator
+    Parent& operator=(const Parent& rhs);
+
+    // destructor
+    virtual ~Parent();
+
+    // overload << 
+    friend std::ostream& operator<<(ostream& os, const Parent& p)
+    {
+        return os << "Parent: " << p.id_ << ", " << p.name_ << endl;
+    }
+};
+
+Parent::Parent(int i, const char* n)
+{
+    cout << "Parent(int i, const char* n)" << endl;
+    id_ = i;
+    name_ = new char[strlen(n) + 1];
+    strncpy(name_, n, strlen(n) + 1);
+}
+
+Parent::Parent(const Parent& p)
+{
+    cout << "Parent(const Parent& p)" << endl;
+    id_ = p.id_;
+    name_ = new char[strlen(p.name_) + 1];
+    strncpy(name_, p.name_, strlen(p.name_) + 1);
+}
+
+Parent &Parent::operator=(const Parent &rhs)
+{
+    if (&rhs == this)
+        return *this;
+    // 释放lhs资源
+    delete[] name_;
+    // 从右侧拷贝资源
+    this->id_ = rhs.id_;
+    name_ = new char[strlen(rhs.name_) + 1];
+    strncpy(name_, rhs.name_, strlen(rhs.name_) + 1);
+
+    // 返回
+    return *this;
+}
+
+Parent::~Parent()
+{
+    cout << "~Parent()" << endl;
+    delete[] name_;
+}
+
+
+class Child : public Parent
+{
+private:
+    int age_;
+    char* style_;
+
+public:
+    // constructor
+    Child(int i = 0, const char* n = "null", const char* s = "null", int a = 0);
+
+    // copy constructor
+    Child(const Child& c);
+
+    // assignment operator
+    Child &operator=(const Child &rhs);
+
+    // destructor
+    ~Child();
+
+    // overload << 
+    friend ostream& operator<<(ostream& os, const Child& c)
+    {
+        return os << (Parent&)c << "Child: " << c.age_ << endl;
+    }
+};
+
+Child::Child(int i, const char* n, const char* s, int a)
+: Parent(i, n)  // 派生类拷贝构造函数仅能够访问派生类成员，因此必须调用基类拷贝构造函数处理基类成员
+{
+    cout << "Default Constructor Child()" << endl;
+    style_ = new char[strlen(s) + 1];
+    strncpy(style_, s, strlen(s) + 1);
+    age_ = a;
+}
+
+Child::Child(const Child& c)
+: Parent(c)
+{
+    cout << "Copy Constructor Child(const Child& c)" << endl;
+    // copy parent data:在参数列表中调用基类的copy constructor
+
+    // copy child added data
+    age_ = c.age_;
+    style_ = new char[strlen(c.style_) + 1];
+    strncpy(style_, c.style_, strlen(c.style_) + 1);
+}
+
+Child &Child::operator=(const Child &rhs)
+{
+    if (&rhs == this)
+        return *this;
+    
+    // 调用Parent类的operator=
+    Parent::operator=(rhs); // 派生类的拷贝赋值必须要处理基类对象的拷贝赋值
+
+    // 释放左侧资源
+    delete[] style_;
+
+    // 从右侧拷贝资源
+    this->age_ = rhs.age_;
+    style_ = new char[strlen(rhs.style_) + 1];
+    strncpy(style_, rhs.style_, strlen(rhs.style_) + 1);
+
+    // 返回
+    return *this;
+}
+
+Child::~Child()
+{
+    cout << "~Child()" << endl;
+    delete[] style_;
+}
+
+
+int main(int argc, const char** argv)
+{
+    Parent p1;
+    cout << "value in p1: " << endl << p1 << endl;
+
+    Parent p2{101, "Liming"};
+    cout << "value in p2: " << endl << p2 << endl;
+
+    Parent p3(p1);
+    cout << "value in p3: " << endl << p3 << endl;
+    p1 = p2;
+    cout << "value in p1: " << endl << p1 << endl;
+
+    Child c1;
+    cout << "value in c1: " << endl << c1 << endl;
+
+    Child c2{201, "Wuhong", "teenager", 15};
+    cout << "value in c2: " << endl << c2 << endl;
+
+    Child c3 = c1;  // Child拷贝构造
+    cout << "value in c3: " << endl << c3 << endl;
+
+    c1 = c2;    // Child拷贝赋值运算符operator=
+    cout << "value in c1: " << endl << c1 << endl;
+
+    return 0;
+}
+```
+
+
 
 
 
@@ -1516,13 +1757,31 @@ Protected成员：类的成员和友元可以访问，派生类的成员和友�
 
 公开的成员变量可以被：到处访问；
 
+|                |           | 继承的类型 |          |
+| :------------: | :-------: | :--------: | :------: |
+| 基类的成员类型 |  public   | protected  | private  |
+|     public     |  public   | protected  | private  |
+|   protected    | protected | protected  | private  |
+|    private     | 不可访问  |  不可访问  | 不可访问 |
+
+
+
 ### 8.3 虚函数
+
+**多态性**是面向对象编程最重要的特性。多态性体现在对象指针或引用在运行时动态绑定。
+
+多态的两个关键机制：
+
+1. 在派生类中重新定义基类方法；
+2. 使用虚方法；
+
+
 
 虚函数：C++多态的核心机制，允许在运行时根据对象的实际类型调用正确的函数实现（动态绑定）。
 
 静态绑定：编译器决定调用哪个函数
 
-动态绑定：运行时决定调用哪个函数
+动态绑定：运行时决定调用哪个函数。程序将基于实际对象的指针或引用的类型选择方法，而不是基于指针或引用的类型。
 
 
 
@@ -1568,10 +1827,345 @@ animal->makeSound(); // 调用 Dog::makeSound()
 ```
 
 3. 虚函数怎么用
-   - 多态基类的析构函数声明为虚函数
+   - **多态基类的析构函数声明为虚函数**（常见的虚函数）
    - 派生类中使用`override`明确重写方法
 
 
+
+## 9. 类模板
+
+### 9.1 回顾：函数模板
+
+- 函数模板不是一个类型、函数、或任何实体
+- 仅定义了模板的源文件没有任何代码生成
+- 模板参数必须被指定，编译器才能生成实际的函数
+
+```cpp
+// function template
+template<typename T>
+T sum(T x, T y)
+{
+	return x + y;
+}
+
+// template function
+sum<int>(2, 3);
+sum(2, 3);
+```
+
+### 9.2 类模板
+
+- C++的模板是一种强大的特性，使得函数和类可以进行**泛型操作**；
+- 这使得函数或模板可以被设计成为各种类型无缝工作，而不需要对每个类型进行重写
+- 通过模板，C++程序可以更简介、模块化、易于编写
+
+```cpp
+// define Matrix class template
+template<typename T>
+class Mat
+{
+    size_t rows;
+    size_t cols;
+    T *data;
+
+public:
+	Mat(size_t rows, size_t cols)
+        : rows(rows)
+        , cols(cols)
+        {
+            data = new T[rows * cols]{};
+        }
+    ~Mat()
+    {
+        delete[] data;
+    }
+    
+    T getElement(size_t r, size_t c);
+    bool setElement(size_t r, size_t c, T value);
+};
+
+// instantiate
+Mat<int> mat;	// class name: Mat<int>
+
+// member function defination
+template<typename T>
+Matrix<T>::Matrix()
+    : size(MAXSIZE){}
+
+template<typename T>
+void Matrix<T>::setMatrix(T array[])
+{
+    for (size_t i = 0; i < size; ++i)
+    {
+		matrix[i] = array[i];
+    }
+}
+```
+
+### 9.3 模板非类型参数
+
+```cpp
+// non type parameters
+template<typename T, size_t rows, size_t cols>
+class Mat
+{
+    T data[rows][cols];
+public:
+	Mat(){}
+    T getELement(size_t r, size_t c);
+    bool setElement(size_t r, size_t c, T value);
+};
+
+// 实例化
+Mat<int, 3, 3> vec3;
+```
+
+### 9.4 类模板特例化
+
+类模板可以使用大部分类型，但如果需要指定存储`bool`类型的数据，为了节省空间，可以对类模板进行`bool`类型特例化
+
+```cpp
+// class template
+template<typename T>
+class MyVector
+{
+    size_t length;
+    T *data;
+public:
+    MyVector(size_t length): length(length)
+    {
+        data = new T[length]{};
+    }
+    ~MyVector()
+    {
+		delete[] data;
+    }
+    MyVector(const MyVector&) = delete;	// 删除默认拷贝构造函数
+    MyVector& operator=(const MyVector&) = delete;	// 删除默认拷贝赋值重载
+    T getELement(size_t r, size_t c);
+    bool setElement(size_t r, size_t c, T value);
+};
+
+
+// class template specialization
+// specialize MyVector for bool
+template<>
+class MyVector<bool>
+{
+    size_t length;
+    unsigned char *data;
+    
+public:
+	MyVector(size_t length): length(length)
+    {
+        // 针对bool类型的，节省空间的内存申请
+        int num_bytes = (length - 1) / 8 + 1;
+        data = new unsigned char[num_bytes]{};
+    }
+    ~MyVector()
+    {
+        delete[] data;
+    }
+    MyVector(Const MyVector&) = delete;
+    MyVector& opeartor=(const MyVector&) = delete;
+    
+    bool getELement(size_t index);
+    bool setElement(size_t index, bool value);
+};
+```
+
+
+
+## 10. 标准输出流和标准错误流
+
+C 语言中预定义了三种文本流，他们的类型是`FILE *`
+
+1. `stdin`: 标准输入流，文件描述符0
+2. `stdout`: 标准输出流，文件描述符1
+3. `stderr`: 标准错误流，文件描述符2
+
+```cpp
+// stdout -C
+fprintf(stdout, "Info: ...\n");
+printf("Info: ...\n", ...);
+
+// stdout -C++
+std::cout << "Info: ..." << std::endl;
+std::cerr << "Error: ..." << std::endl;
+```
+
+### 10.1 重定向
+
+- 程序的输出是在一个管道内
+- 输出可以被重定向。可以将输出重定向到文件用于debug尤其是当程序需要运行很长时间
+
+```shell
+./program | less			# 将程序输出通过管道传递给less分页器
+./program > output.log		# 将标准输出重定向到文件（覆盖模式）
+./program 1> output.log		# 显式指定标准输出流重定向（等于>，1表示标准输出流）
+./program >> output.log		# 将标准输出重定向到文件（追加模式）
+./program > /dev/null		# 将标准输出重定向到空设备（完全丢弃所有标准输出）
+
+./program 2> error.log		# 将标准错误重定向到文件（2表示标准错误流）
+./program > output.log 2> error.log		# 分离重定向标准输出和标准错误
+./program &> all.log		# 将标准输出和标准错误合并重定向到同一文件
+./program > all.log 2>&1	# 将标准错误重定向到标准输出，再重定向到文件（等于上一个）
+```
+
+
+
+### 10.2 断言assert
+
+- `assert`是一个类似函数的宏，位置在`<assert.h>`和`<cassert>`
+- 如果条件为真，什么也不做
+- 如果条件为假，输出诊断信息并且调用`abort()`
+- 如果定义了`NDEBUG`，无论条件真假，什么也不做
+- 断言可以被用来调试
+
+
+
+### 10.3 异常exceptions
+
+什么是异常：
+异常是程序运行错误是发生的一种情况；换句话说，异常是一个运行错误。
+
+程序错误处理方法1：Kil the program when error occurs
+
+```cpp
+float ratio(float a, float b)
+{
+    if (fabs(a + b) < FIL_EPSILON)
+    {
+        std::cerr << "Error ... " << std::endl;
+        std::abort();	// 退出
+    }
+    // ...
+}
+```
+
+程序错误处理方法2：告诉调用的地方，但需要用第三个参数
+
+```cpp
+bool ratio(float a, float b)
+{
+    if (fabs(a + b) < FIL_EPSILON)
+    {
+        std::cerr << "Error ... " << std::endl;
+		return false;
+    }
+    c = (a - b) / (a + b);
+    return true;
+}
+```
+
+**程序错误处理方法3：抛出异常（C++特性）**
+
+```cpp
+float ratio(float a, float b)
+{
+    if (fabs(a + b) < FIL_EPSILON)
+    {
+		throw "Error ... ";
+    }
+    return (a - b) / (a + b);
+}
+
+// caller:
+try{
+	z = ratio(x, y);
+    std::cout << z << std::endl;
+}
+catch(const char *msg)
+{
+    std::cerr << msg << std::endl;
+}
+```
+
+- try - catch 组合
+- 一个 try 可以跟着多个 catch（用于接受不同类型的异常值）
+- 如果一个异常没有被处理，抛给它的调用者；如果调用者没有处理异常，抛给调用者的调用者，直到`main()`
+- 如果一个异常没有被接住，将会抛给最顶层的调用者，并终止程序；因此，一个`catch - all handler: catch(...){}`可以处理这种情况
+- 如果一个对象被抛出，并且它的类型是其他类的派生类，那么一个可以处理基类的 catch handler 可以处理
+- `std::exception`**可以是任何类型异常的基类**，函数`std::exception::what()`可以被重写来返回一个C风格的字符串
+- 关键字`noexcept`限定函数不会抛出异常
+
+```cpp
+void foo() noexcept;
+```
+
+- 关键字`nothrow`
+
+
+
+
+## 11. 友元类
+
+- 一个类是另一个类的友元
+- 友元类可以访问所有的成员，甚至是私有成员
+- 友元类可以是公开的、受保护的和私有的
+
+```cpp
+class Sniper
+{
+private:
+	int bullets;
+public:
+	Sniper(int bullets = 0);
+    friend class Supplier;
+};
+
+// friend class
+class Supplier
+{
+	int storage;
+public:
+	Supplier(int storage = 1000);
+    bool provide(Sniper &sniper)
+    {
+		// ...
+    }
+};
+```
+
+### 11.1 RTTI & Type Cast Operators
+
+- RTTI: runtime type identification 运行时类型识别
+- c++特性
+
+**typeid operator:**
+
+- 决定两个对象是否为相同类型
+- 接受：类的名字，计算结果为对象的表达式
+
+**type_info 类：**
+
+- `typeid`运算符返回一个`type_info`对象的引用
+- 定义在头文件`<typeinfo>`
+- 使用重载运算符`==`和`!=`比较类型
+
+**dynamic_cast:**
+
+- 安全地将一个对象的地址转换为某个特定类型的指针
+
+**const_cast:**
+
+- 常量的类型转换
+
+**static_cast:**
+
+- `static_cast`和C风格的转换的权利和含义基本相同
+
+- 只有当类型可以被隐式转换为与表达式相同的类型时，他才有效
+
+**reinterpret_cast:**
+
+- 通过重新解释底层位模式进行类型转换
+
+```cpp
+int i = 10;
+float *p1 = reinterpret_cast<float *>(i);	// static_cast will fail
+int *p2 = reinterpret_cast<int *>(p1);
+```
 
 
 
@@ -1584,6 +2178,40 @@ animal->makeSound(); // 调用 Dog::makeSound()
 2. 不能返回临时变量的引用；其实就是说：临时变量不能和非const的引用绑定;
 
 3. 拷贝构造函数不能按值传递(pass by value)其自身的类型（会无限递归）；
+
+4. 默认参数构造函数和默认构造函数（无参构造函数）：
+
+   这两种构造函数都可以匹配无参调用，导致二义性；
+
+   解决方案1：保留无参构造函数+带参构造函数（但移除默认值）
+
+   解决方案2：单一带参构造函数使用默认值
+
+   ```cpp
+   class Parent
+   {
+   private:
+       int id_;
+       char* name_;
+   
+   public:
+       Parent()
+       : id_(0)
+       , name_("null")
+       {
+           cout << "Parent()" << endl;
+       };
+   
+       Parent(int i = 0, char* n = "null")
+       : id_(i)
+       , name_(n)
+       {
+           cout << "Parent(int i, string n)" << endl;
+       };
+   };
+   ```
+
+   
 
 # 附录：Linux Commands
 
