@@ -488,6 +488,71 @@ public:
 
 
 
+# HOT100
+
+## 哈希
+
+### 2. 两数之和
+
+```cpp
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        unordered_map<int, int> idx;
+        for (int j = 0; ; ++j)
+        {
+            auto it = idx.find(target - nums[j]);
+            if (it != idx.end())
+            {
+                return {j, it->second};
+            }
+            idx[nums[j]] = j;
+        }
+    }
+};
+```
+
+## 双指针
+
+### 283. 移动0
+
+```cpp
+class Solution {
+public:
+    void moveZeroes(vector<int>& nums) {
+      for (int i = 0; i < nums.size(); ++i)
+      {
+        for (int j = i + 1; j < nums.size(); ++j)
+        {
+            if (nums[i] == 0)
+            {
+                swap(nums[i], nums[j]);
+            }
+        }
+      }  
+    }
+};
+
+class Solution {
+public:
+    void moveZeroes(vector<int>& nums) {
+        int n = nums.size();
+        int left = 0, right  = 0;
+        while (right < n)
+        {
+            if (nums[right])
+            {
+                swap(nums[right], nums[left]);
+                left++;
+            }
+            right++;
+        }
+    }
+};
+```
+
+
+
 # C
 
 1. `std::string::npos`：静态成员变量。表示**字符串未找到目标位置**，常常和`find`方法配合使用。例如第2586题
