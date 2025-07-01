@@ -486,6 +486,165 @@ public:
 };
 ```
 
+### 876. 链表的中间节点
+
+```cpp
+// My Solution
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* middleNode(ListNode* head) {
+        int count = 0;
+        ListNode* temp = head;
+        while (temp)
+        {
+            temp = temp->next;
+            ++count;
+        }
+
+        int delta = count / 2;
+        temp = head;
+        while(delta--)
+        {
+            temp = temp->next;
+        }
+        return temp;
+    }
+};
+
+// 快慢指针
+class Solution {
+public:
+    ListNode* middleNode(ListNode* head) {
+        ListNode* slow = head;
+        ListNode* fast = head;
+        while(fast != nullptr && fast->next != nullptr)
+        {
+            fast = fast->next->next;
+            slow = slow->next;
+        }
+        return slow;
+    }
+};
+```
+
+### 141. 环形链表
+
+```cpp
+class Solution {
+public:
+    bool hasCycle(ListNode *head) {
+        ListNode* slow = head;
+        ListNode* fast = head;
+        while (fast && fast->next)
+        {
+            fast = fast->next->next;
+            slow = slow->next;
+            if (fast == slow)
+                return true;
+        }
+        return false;
+    }
+};
+```
+
+### 234. 回文链表
+
+```cpp
+class Solution {
+public:
+    //查找中间节点
+    ListNode* middleNode(ListNode* head)
+    {
+        ListNode* fast = head;
+        ListNode* slow = head;
+        while(fast && fast->next)
+        {
+            fast = fast->next->next;
+            slow = slow->next;
+        }
+        return slow;
+    }
+
+    // 反转链表
+    ListNode* reverseList(ListNode* head)
+    {
+        ListNode* prev = nullptr;
+        ListNode* curr = head;
+        while (curr)
+        {
+            ListNode* temp = curr->next;
+            curr->next = prev;
+            prev = curr;
+            curr = temp;
+        }
+        return prev;
+    }
+
+    bool isPalindrome(ListNode* head) {
+        ListNode* mid = middleNode(head);
+        ListNode* head2 = reverseList(mid);
+        while(head2)
+        {
+            if (head2->val != head->val)
+                return false;
+            head = head->next;
+            head2 = head2->next;
+        }
+        return true;
+    }
+};
+```
+
+### 21. 合并有序链表
+
+```cpp
+class Solution {
+public:
+    ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {
+        ListNode* p1 = list1;
+        ListNode* p2 = list2;
+        ListNode* dummyhead = new ListNode();	// 虚拟头节点
+        ListNode* curr = dummyhead;
+        // 依次插入
+        while(p1 && p2)
+        {
+            if (p1->val < p2->val)
+            {
+                curr->next = p1;
+                p1 = p1->next;
+            }
+            else
+            {
+                curr->next = p2;
+                p2 = p2->next;
+            }
+            curr = curr->next;
+        }
+        
+        // 拼接剩余链表
+        curr->next = p1 ? p1 : p2;
+
+        ListNode* ret = dummyhead->next;
+        delete dummyhead;
+        return ret;
+    }
+};
+```
+
+**总结：**
+
+涉及到用已有链表创建新链表的，使用虚拟头节点更好
+
 
 
 # C
