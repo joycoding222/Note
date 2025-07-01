@@ -125,3 +125,42 @@ int main()
 
 ### 1. 对象的优化
 
+1. 带右值引用的拷贝构造函数：做资源的转移而不是拷贝
+2. `std::move`移动语义，将传入参数转换为相应类型的右值
+3. `std::forward`类型完美转发，能够识别左值或右值
+
+
+
+### 4. C++11
+
+1. auto：根据右值推导变量类型
+2. nullptr：空指针（指针专用，值是0）
+3. for-each：底层通过指针或迭代器实现
+
+```cpp
+std::vector<int> vec;
+for (int &ele : vec)
+{
+    cout << ele;
+}
+```
+
+4. 右值引用 move forward
+
+5. 模板：typename ...A 表示可变参数
+
+6. 绑定器和函数对象******
+
+7. lambda表达式
+
+8. 智能指针 shared_ptr & weak_ptr
+
+9. 容器
+
+   unorder_set & unorder_map
+
+   array
+
+   forwait_list
+
+10. C++语言级别的多线程
