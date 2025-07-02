@@ -551,6 +551,145 @@ public:
 };
 ```
 
+### 11. 盛水最多的容器
+
+```cpp
+class Solution {
+public:
+    int maxArea(vector<int>& height) {
+        int ans = 0;
+        int left = 0;
+        int right = height.size() - 1;
+        while (left < right)
+        {
+            int area = (right - left) * min(height[left], height[right]);
+            ans = max(ans, area);
+            if(height[left] < height[right])
+            {
+                left++;
+            }
+            else
+            {
+                right--;
+            }
+        }
+        return ans;
+    }
+};
+```
+
+### 15. 三数之和
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        vector<vector<int>> ans;
+        // 排序
+        ranges::sort(nums);
+
+        int n = nums.size();
+        // 枚举 i
+        for(int i = 0; i < n - 2; ++i)
+        {
+            int x = nums[i];
+            // 防止重复
+            if (i > 0 && nums[i] == nums[i - 1])
+                continue;
+            // 优化1（可省略）
+            if (x + nums[i + 1] + nums[i + 2] > 0)
+                break;
+            // 优化2（可省略）
+            if (x + nums[n - 1] + nums[n - 2] < 0)
+                continue;
+            // 转换成双指针两数之和
+            int j = i + 1;
+            int k = n - 1;
+            while (j < k)
+            {
+                int s = x + nums[j] + nums[k];
+                if (s > 0)
+                    k -= 1;
+                else if (s < 0)
+                    j += 1;
+                else
+                {
+                    ans.push_back({x, nums[j], nums[k]});
+                    j += 1;
+                    // 防止重复
+                    while (j < k && nums[j] == nums[j - 1])
+                        j += 1;
+                    k -= 1;
+                    // 防止重复
+                    while (j < k && nums[k] == nums[k + 1])
+                        k -= 1;
+                }
+            }
+        }
+        return ans;
+    }
+};
+```
+
+## 链表
+
+### 160. 相交链表
+
+```cpp
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode(int x) : val(x), next(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode *getIntersectionNode(ListNode *headA, ListNode *headB) {
+        ListNode* p1 = headA;
+        ListNode* p2 = headB;
+        // 计数
+        int sizeA = 0, sizeB = 0;
+        while (p1 != NULL)
+        {
+            p1 = p1->next;
+            ++sizeA;
+        }
+        while (p2 != NULL)
+        {
+            p2 = p2->next;
+            ++sizeB;
+        }
+        // 快指针先走
+        p1 = headA;
+        p2 = headB;
+        int delta = abs(sizeA - sizeB);
+        if (sizeA > sizeB)
+        {
+            while(delta--)
+            {
+                p1 = p1->next;
+            }
+        }
+        else if(sizeA < sizeB)
+        {
+            while(delta--)
+            {
+                p2 = p2->next;
+            }
+        }
+        // 找交点
+        while (p1 != p2)
+        {
+            p1 = p1->next;
+            p2 = p2->next;
+        }
+        return p1;
+    }
+};
+```
+
 
 
 # C
